@@ -19,8 +19,10 @@ jobs:
 
       - name: Install Sui CLI
         run: |
-          curl -fsSL https://get.sui.io | sh
-          echo "$HOME/.sui/bin" >> $GITHUB_PATH
+          curl -sSfL https://raw.githubusercontent.com/MystenLabs/suiup/main/install.sh | sh
+          export PATH="$HOME/.local/bin:$PATH"
+          suiup install -y sui@testnet
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Verify Sui installation
         run: sui --version
@@ -46,8 +48,10 @@ jobs:
 
       - name: Install Sui CLI
         run: |
-          curl -fsSL https://get.sui.io | sh
-          echo "$HOME/.sui/bin" >> $GITHUB_PATH
+          curl -sSfL https://raw.githubusercontent.com/MystenLabs/suiup/main/install.sh | sh
+          export PATH="$HOME/.local/bin:$PATH"
+          suiup install -y sui@testnet
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Verify Sui installation
         run: sui --version
