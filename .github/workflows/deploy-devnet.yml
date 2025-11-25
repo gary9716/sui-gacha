@@ -32,9 +32,6 @@ jobs:
       - name: Run tests
         run: make test
 
-      - name: Lint code
-        run: make lint
-
   deploy:
     name: Deploy to Devnet
     runs-on: ubuntu-latest

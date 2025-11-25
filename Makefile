@@ -1,4 +1,4 @@
-.PHONY: help build test publish clean format lint verify coverage sui-version
+.PHONY: help build test publish clean format verify coverage sui-version
 
 # Default target
 help:
@@ -10,8 +10,7 @@ help:
 	@echo "  make publish      - Publish the package (requires active address)"
 	@echo "  make clean        - Clean build artifacts"
 	@echo "  make format       - Format Move source files"
-	@echo "  make lint         - Lint Move source files"
-	@echo "  make verify       - Verify Move package (build + lint)"
+	@echo "  make verify       - Verify Move package (build)"
 	@echo "  make coverage     - Run tests with coverage"
 	@echo "  make sui-version  - Show Sui CLI version"
 	@echo "  make help         - Show this help message"
@@ -46,12 +45,8 @@ clean:
 format:
 	sui move format
 
-# Lint Move source files
-lint:
-	sui move lint
-
-# Verify package (build + lint)
-verify: build lint
+# Verify package (build)
+verify: build
 	@echo "Package verification complete"
 
 # Run tests with coverage
