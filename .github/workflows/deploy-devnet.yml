@@ -1,0 +1,106 @@
+name: Deploy to Devnet
+
+on:
+  push:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+env:
+  SUI_VERSION: "1.30.0"
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Sui CLI
+        run: |
+          curl -fsSL https://get.sui.io | sh
+          echo "$HOME/.sui/bin" >> $GITHUB_PATH
+
+      - name: Verify Sui installation
+        run: sui --version
+
+      - name: Build package
+        run: make build
+
+      - name: Run tests
+        run: make test
+
+      - name: Lint code
+        run: make lint
+
+  deploy:
+    name: Deploy to Devnet
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    environment:
+      name: devnet
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Sui CLI
+        run: |
+          curl -fsSL https://get.sui.io | sh
+          echo "$HOME/.sui/bin" >> $GITHUB_PATH
+
+      - name: Verify Sui installation
+        run: sui --version
+
+      - name: Configure Sui client for devnet
+        run: |
+          sui client new-env --alias devnet --rpc https://fullnode.devnet.sui.io:443
+          sui client switch --env devnet
+
+      - name: Import private key or mnemonic
+        if: secrets.DEVNET_PRIVATE_KEY != '' || secrets.DEVNET_MNEMONIC != ''
+        run: |
+          if [ -n "${{ secrets.DEVNET_PRIVATE_KEY }}" ]; then
+            echo "${{ secrets.DEVNET_PRIVATE_KEY }}" | sui keytool import --json-stdin
+          elif [ -n "${{ secrets.DEVNET_MNEMONIC }}" ]; then
+            echo "${{ secrets.DEVNET_MNEMONIC }}" | sui keytool import --json-stdin
+          fi
+
+      - name: Set active address
+        run: |
+          if [ -n "${{ secrets.DEVNET_ACTIVE_ADDRESS }}" ]; then
+            sui client switch --address ${{ secrets.DEVNET_ACTIVE_ADDRESS }}
+          elif [ -n "${{ secrets.DEVNET_PRIVATE_KEY }}" ] || [ -n "${{ secrets.DEVNET_MNEMONIC }}" ]; then
+            # Use the first address if we imported a key
+            sui client active-address
+          else
+            echo "No active address or key found, using default"
+          fi
+
+      - name: Build package
+        run: make build
+
+      - name: Publish to Devnet
+        run: |
+          sui client publish --gas-budget 100000000 --json > publish-result.json || exit 1
+          cat publish-result.json
+
+      - name: Extract package ID
+        id: package
+        run: |
+          PACKAGE_ID=$(cat publish-result.json | jq -r '.objectChanges[] | select(.type == "published") | .packageId')
+          echo "package_id=$PACKAGE_ID" >> $GITHUB_OUTPUT
+          echo "Published package ID: $PACKAGE_ID"
+
+      - name: Comment PR with package ID
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `✅ Deployed to Devnet\n\nPackage ID: ${{ steps.package.outputs.package_id }}`
+            })
+

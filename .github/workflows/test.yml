@@ -1,0 +1,35 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  SUI_VERSION: "1.30.0"
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Sui CLI
+        run: |
+          curl -fsSL https://get.sui.io | sh
+          echo "$HOME/.sui/bin" >> $GITHUB_PATH
+
+      - name: Verify Sui installation
+        run: sui --version
+
+      - name: Build package
+        run: make build
+
+      - name: Run tests
+        run: make test
+
+      - name: Lint code
+        run: make lint

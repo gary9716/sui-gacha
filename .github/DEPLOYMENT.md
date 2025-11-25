@@ -37,26 +37,38 @@ To export your private key for use in CI/CD:
 
 **Security Warning**: Never commit private keys or mnemonics to the repository. Always use GitHub Secrets.
 
+## Workflow Structure
+
+The CI/CD is split into separate workflow files:
+
+- **`test.yml`** - Runs tests on every push and pull request
+- **`deploy-devnet.yml`** - Deploys to devnet
+- **`deploy-testnet.yml`** - Deploys to testnet
+- **`deploy-mainnet.yml`** - Deploys to mainnet
+
 ## Workflow Triggers
 
 ### Automatic Triggers
 
-1. **Tests**: Run automatically on every push and pull request
-2. **Devnet Deployment**: 
+1. **Tests** (`test.yml`): 
+   - Run automatically on every push and pull request to `main` or `develop` branches
+
+2. **Devnet Deployment** (`deploy-devnet.yml`): 
    - Automatically runs on push to `main` or `develop` branches
-   - Only runs if tests pass
+   - Runs tests first, then deploys if tests pass
+   - Can also be triggered manually via workflow_dispatch
 
 ### Manual Triggers
 
-1. **Testnet Deployment**:
-   - Go to **Actions** → **CI/CD Pipeline** → **Run workflow**
-   - Select `testnet` from the network dropdown
+1. **Testnet Deployment** (`deploy-testnet.yml`):
+   - Go to **Actions** → **Deploy to Testnet** → **Run workflow**
    - Click **Run workflow**
+   - Runs tests first, then deploys if tests pass
 
-2. **Mainnet Deployment**:
-   - Go to **Actions** → **CI/CD Pipeline** → **Run workflow**
-   - Select `mainnet` from the network dropdown
+2. **Mainnet Deployment** (`deploy-mainnet.yml`):
+   - Go to **Actions** → **Deploy to Mainnet** → **Run workflow**
    - Click **Run workflow**
+   - Runs tests first, then deploys if tests pass
 
 ### Tag-Based Triggers
 
