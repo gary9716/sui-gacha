@@ -1,0 +1,265 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+    inputs:
+      network:
+        description: 'Network to deploy to'
+        required: true
+        type: choice
+        options:
+          - devnet
+          - testnet
+          - mainnet
+
+env:
+  SUI_VERSION: "1.30.0"
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Sui CLI
+        run: |
+          curl -fsSL https://get.sui.io | sh
+          echo "$HOME/.sui/bin" >> $GITHUB_PATH
+
+      - name: Verify Sui installation
+        run: sui --version
+
+      - name: Build package
+        run: make build
+
+      - name: Run tests
+        run: make test
+
+      - name: Lint code
+        run: make lint
+
+  deploy-devnet:
+    name: Deploy to Devnet
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    environment:
+      name: devnet
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Sui CLI
+        run: |
+          curl -fsSL https://get.sui.io | sh
+          echo "$HOME/.sui/bin" >> $GITHUB_PATH
+
+      - name: Verify Sui installation
+        run: sui --version
+
+      - name: Configure Sui client for devnet
+        run: |
+          sui client new-env --alias devnet --rpc https://fullnode.devnet.sui.io:443
+          sui client switch --env devnet
+
+      - name: Import private key or mnemonic
+        if: secrets.DEVNET_PRIVATE_KEY != '' || secrets.DEVNET_MNEMONIC != ''
+        run: |
+          if [ -n "${{ secrets.DEVNET_PRIVATE_KEY }}" ]; then
+            echo "${{ secrets.DEVNET_PRIVATE_KEY }}" | sui keytool import --json-stdin
+          elif [ -n "${{ secrets.DEVNET_MNEMONIC }}" ]; then
+            echo "${{ secrets.DEVNET_MNEMONIC }}" | sui keytool import --json-stdin
+          fi
+
+      - name: Set active address
+        run: |
+          if [ -n "${{ secrets.DEVNET_ACTIVE_ADDRESS }}" ]; then
+            sui client switch --address ${{ secrets.DEVNET_ACTIVE_ADDRESS }}
+          elif [ -n "${{ secrets.DEVNET_PRIVATE_KEY }}" ] || [ -n "${{ secrets.DEVNET_MNEMONIC }}" ]; then
+            # Use the first address if we imported a key
+            sui client active-address
+          else
+            echo "No active address or key found, using default"
+          fi
+
+      - name: Build package
+        run: make build
+
+      - name: Publish to Devnet
+        run: |
+          sui client publish --gas-budget 100000000 --json > publish-result.json || exit 1
+          cat publish-result.json
+
+      - name: Extract package ID
+        id: package
+        run: |
+          PACKAGE_ID=$(cat publish-result.json | jq -r '.objectChanges[] | select(.type == "published") | .packageId')
+          echo "package_id=$PACKAGE_ID" >> $GITHUB_OUTPUT
+          echo "Published package ID: $PACKAGE_ID"
+
+      - name: Comment PR with package ID
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `✅ Deployed to Devnet\n\nPackage ID: ${{ steps.package.outputs.package_id }}`
+            })
+
+  deploy-testnet:
+    name: Deploy to Testnet
+    runs-on: ubuntu-latest
+    needs: test
+    if: |
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.network == 'testnet') ||
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    environment:
+      name: testnet
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Sui CLI
+        run: |
+          curl -fsSL https://get.sui.io | sh
+          echo "$HOME/.sui/bin" >> $GITHUB_PATH
+
+      - name: Verify Sui installation
+        run: sui --version
+
+      - name: Configure Sui client for testnet
+        run: |
+          sui client new-env --alias testnet --rpc https://fullnode.testnet.sui.io:443
+          sui client switch --env testnet
+
+      - name: Import private key or mnemonic
+        if: secrets.TESTNET_PRIVATE_KEY != '' || secrets.TESTNET_MNEMONIC != ''
+        run: |
+          if [ -n "${{ secrets.TESTNET_PRIVATE_KEY }}" ]; then
+            echo "${{ secrets.TESTNET_PRIVATE_KEY }}" | sui keytool import --json-stdin
+          elif [ -n "${{ secrets.TESTNET_MNEMONIC }}" ]; then
+            echo "${{ secrets.TESTNET_MNEMONIC }}" | sui keytool import --json-stdin
+          fi
+
+      - name: Set active address
+        run: |
+          if [ -n "${{ secrets.TESTNET_ACTIVE_ADDRESS }}" ]; then
+            sui client switch --address ${{ secrets.TESTNET_ACTIVE_ADDRESS }}
+          elif [ -n "${{ secrets.TESTNET_PRIVATE_KEY }}" ] || [ -n "${{ secrets.TESTNET_MNEMONIC }}" ]; then
+            # Use the first address if we imported a key
+            sui client active-address
+          else
+            echo "No active address or key found, using default"
+          fi
+
+      - name: Build package
+        run: make build
+
+      - name: Publish to Testnet
+        run: |
+          sui client publish --gas-budget 100000000 --json > publish-result.json || exit 1
+          cat publish-result.json
+
+      - name: Extract package ID
+        id: package
+        run: |
+          PACKAGE_ID=$(cat publish-result.json | jq -r '.objectChanges[] | select(.type == "published") | .packageId')
+          echo "package_id=$PACKAGE_ID" >> $GITHUB_OUTPUT
+          echo "Published package ID: $PACKAGE_ID"
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Testnet Release ${{ github.ref_name }}
+          body: |
+            Deployed to Testnet
+            
+            Package ID: ${{ steps.package.outputs.package_id }}
+          draft: false
+          prerelease: false
+
+  deploy-mainnet:
+    name: Deploy to Mainnet
+    runs-on: ubuntu-latest
+    needs: test
+    if: |
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.network == 'mainnet') ||
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/release-'))
+    environment:
+      name: mainnet
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Sui CLI
+        run: |
+          curl -fsSL https://get.sui.io | sh
+          echo "$HOME/.sui/bin" >> $GITHUB_PATH
+
+      - name: Verify Sui installation
+        run: sui --version
+
+      - name: Configure Sui client for mainnet
+        run: |
+          sui client new-env --alias mainnet --rpc https://fullnode.mainnet.sui.io:443
+          sui client switch --env mainnet
+
+      - name: Import private key or mnemonic
+        if: secrets.MAINNET_PRIVATE_KEY != '' || secrets.MAINNET_MNEMONIC != ''
+        run: |
+          if [ -n "${{ secrets.MAINNET_PRIVATE_KEY }}" ]; then
+            echo "${{ secrets.MAINNET_PRIVATE_KEY }}" | sui keytool import --json-stdin
+          elif [ -n "${{ secrets.MAINNET_MNEMONIC }}" ]; then
+            echo "${{ secrets.MAINNET_MNEMONIC }}" | sui keytool import --json-stdin
+          fi
+
+      - name: Set active address
+        run: |
+          if [ -n "${{ secrets.MAINNET_ACTIVE_ADDRESS }}" ]; then
+            sui client switch --address ${{ secrets.MAINNET_ACTIVE_ADDRESS }}
+          elif [ -n "${{ secrets.MAINNET_PRIVATE_KEY }}" ] || [ -n "${{ secrets.MAINNET_MNEMONIC }}" ]; then
+            # Use the first address if we imported a key
+            sui client active-address
+          else
+            echo "No active address or key found, using default"
+          fi
+
+      - name: Build package
+        run: make build
+
+      - name: Publish to Mainnet
+        run: |
+          sui client publish --gas-budget 100000000 --json > publish-result.json || exit 1
+          cat publish-result.json
+
+      - name: Extract package ID
+        id: package
+        run: |
+          PACKAGE_ID=$(cat publish-result.json | jq -r '.objectChanges[] | select(.type == "published") | .packageId')
+          echo "package_id=$PACKAGE_ID" >> $GITHUB_OUTPUT
+          echo "Published package ID: $PACKAGE_ID"
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/release-')
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Mainnet Release ${{ github.ref_name }}
+          body: |
+            Deployed to Mainnet
+            
+            Package ID: ${{ steps.package.outputs.package_id }}
+          draft: false
+          prerelease: false
+
