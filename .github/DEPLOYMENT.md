@@ -53,27 +53,25 @@ The CI/CD is split into separate workflow files:
 1. **Tests** (`test.yml`): 
    - Run automatically on every push and pull request to `main` or `develop` branches
 
-2. **Devnet Deployment** (`deploy-devnet.yml`): 
-   - Automatically runs on push to `main` or `develop` branches
-   - Runs tests first, then deploys if tests pass
-   - Can also be triggered manually via workflow_dispatch
-
 ### Manual Triggers
 
-1. **Testnet Deployment** (`deploy-testnet.yml`):
+All deployment workflows are **manual only** and must be triggered via GitHub Actions UI:
+
+1. **Devnet Deployment** (`deploy-devnet.yml`):
+   - Go to **Actions** → **Deploy to Devnet** → **Run workflow**
+   - Click **Run workflow**
+   - Runs tests first, then deploys if tests pass
+
+2. **Testnet Deployment** (`deploy-testnet.yml`):
    - Go to **Actions** → **Deploy to Testnet** → **Run workflow**
    - Click **Run workflow**
    - Runs tests first, then deploys if tests pass
 
-2. **Mainnet Deployment** (`deploy-mainnet.yml`):
+3. **Mainnet Deployment** (`deploy-mainnet.yml`):
    - Go to **Actions** → **Deploy to Mainnet** → **Run workflow**
    - Click **Run workflow**
    - Runs tests first, then deploys if tests pass
 
-### Tag-Based Triggers
-
-- **Testnet**: Push a tag starting with `v` (e.g., `v1.0.0`) to trigger testnet deployment
-- **Mainnet**: Push a tag starting with `release-` (e.g., `release-1.0.0`) to trigger mainnet deployment
 
 ## Environment Protection
 
@@ -89,6 +87,4 @@ You can add environment protection rules in **Settings** → **Environments** to
 After a deployment completes:
 1. Check the workflow run in the **Actions** tab
 2. The package ID will be displayed in the workflow logs
-3. For PRs, the package ID will be posted as a comment
-4. For tagged releases, a GitHub release will be created with the package ID
 
