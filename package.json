@@ -1,0 +1,43 @@
+{
+  "name": "sui-gacha",
+  "version": "0.1.0",
+  "description": "Sui Gacha Move package with TypeScript codegen",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src/generated",
+    "sources",
+    "Move.toml",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YOUR_USERNAME/sui-gacha.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "codegen": "npx sui-ts-codegen generate",
+    "codegen:watch": "npx sui-ts-codegen generate --watch",
+    "build:move": "sui move build",
+    "test:move": "sui move test"
+  },
+  "devDependencies": {
+    "@mysten/codegen": "^0.1.0",
+    "@mysten/sui": "^1.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@mysten/sui": "^1.0.0"
+  },
+  "keywords": [
+    "sui",
+    "move",
+    "blockchain"
+  ],
+  "license": "MIT"
+}
+

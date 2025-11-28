@@ -45,6 +45,7 @@ The CI/CD is split into separate workflow files:
 - **`deploy-devnet.yml`** - Deploys to devnet
 - **`deploy-testnet.yml`** - Deploys to testnet
 - **`deploy-mainnet.yml`** - Deploys to mainnet
+- **`publish-ts-package.yml`** - Publishes TypeScript/npm package
 
 ## Workflow Triggers
 
@@ -81,6 +82,43 @@ The workflow uses GitHub Environments for deployments:
 - `mainnet` - For mainnet deployments (should be protected)
 
 You can add environment protection rules in **Settings** → **Environments** to require approvals for testnet/mainnet deployments.
+
+## npm Publishing
+
+The project includes a publish workflow (`publish-ts-package.yml`) to publish the npm package:
+
+### Manual Publishing
+
+1. Go to **Actions** → **Publish TypeScript Package** → **Run workflow**
+2. Select version bump type (patch, minor, or major)
+3. Click **Run workflow**
+4. The workflow will:
+   - Run tests
+   - Generate TypeScript code
+   - Bump version in package.json
+   - Publish to npm
+   - Create a GitHub release
+
+### Tag-Based Publishing
+
+Push a tag starting with `v` (e.g., `v1.0.0`) to trigger automatic publishing:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+### Required Secrets
+
+For npm publishing, add the following secret:
+- `NPM_TOKEN` - Your npm access token with publish permissions
+
+To create an npm token:
+1. Go to https://www.npmjs.com/settings/YOUR_USERNAME/tokens
+2. Create a new "Automation" token
+3. Add it as `NPM_TOKEN` in GitHub Secrets
+
+**Note**: The npm environment uses GitHub's built-in authentication, but you still need `NPM_TOKEN` for publishing to the public npm registry.
 
 ## Viewing Deployment Results
 

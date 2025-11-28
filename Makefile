@@ -1,4 +1,4 @@
-.PHONY: help build test publish clean format verify coverage sui-version
+.PHONY: help build test publish clean format verify coverage sui-version codegen codegen-watch install-deps
 
 # Default target
 help:
@@ -12,6 +12,9 @@ help:
 	@echo "  make format       - Format Move source files"
 	@echo "  make verify       - Verify Move package (build)"
 	@echo "  make coverage     - Run tests with coverage"
+	@echo "  make codegen      - Generate TypeScript code from Move package"
+	@echo "  make codegen-watch - Watch for changes and regenerate TypeScript code"
+	@echo "  make install-deps - Install npm dependencies"
 	@echo "  make sui-version  - Show Sui CLI version"
 	@echo "  make help         - Show this help message"
 
@@ -52,6 +55,21 @@ verify: build
 # Run tests with coverage
 coverage:
 	sui move test --coverage
+
+# Generate TypeScript code from Move package
+codegen: build
+	@echo "Generating package summary..."
+	sui move summary
+	@echo "Generating TypeScript code..."
+	npm run codegen
+
+# Watch for changes and regenerate TypeScript code
+codegen-watch:
+	npm run codegen:watch
+
+# Install npm dependencies
+install-deps:
+	npm install
 
 # Show Sui CLI version
 sui-version:

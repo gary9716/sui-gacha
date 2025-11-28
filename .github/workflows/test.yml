@@ -27,8 +27,19 @@ jobs:
       - name: Verify Sui installation
         run: sui --version
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install npm dependencies
+        run: make install-deps
+
       - name: Build package
         run: make build
 
       - name: Run tests
         run: make test
+
+      - name: Generate TypeScript code
+        run: make codegen
