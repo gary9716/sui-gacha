@@ -48,9 +48,9 @@ entry fun migrate(
     version: &mut Version,
     _ctx: &mut sui::tx_context::TxContext
 ) {
+    // Verify the publisher cap is from the VERSION module
     assert!(cap.from_module<VERSION>(), E_NOT_PUBLISHER);
-    
-    // The presence of &Publisher ensures only the publisher can call this
+
     // Verify the version is being updated to the current package version
     assert!(version.version < CURRENT_VERSION, E_VERSION_NOT_OLDER);
     
