@@ -41,14 +41,14 @@ The generated TypeScript code will be available in `src/generated/`. You can imp
 
 ```typescript
 import { Transaction } from '@mysten/sui/transactions';
-import * as sui_gacha from './generated/sui_gacha/sui_gacha';
+import * as gacha from './generated/gacha/gacha';
 
 // Example: Call a function from your Move module
 async function callMoveFunction() {
   const tx = new Transaction();
   
   // Use generated functions
-  tx.add(sui_gacha.someFunction({
+  tx.add(gacha.someFunction({
     arguments: {
       // Type-safe arguments
     },
@@ -65,7 +65,7 @@ async function callMoveFunction() {
 
 ### Configuring SuiClient for Local Packages
 
-Since this package uses `@local-pkg/sui_gacha`, you need to configure your `SuiClient` with the package ID override:
+Since this package uses `@local-pkg/gacha`, you need to configure your `SuiClient` with the package ID override:
 
 ```typescript
 import { SuiClient } from '@mysten/sui/client';
@@ -76,7 +76,7 @@ const client = new SuiClient({
   mvr: {
     overrides: {
       packages: {
-        '@local-pkg/sui_gacha': 'YOUR_PACKAGE_ID', // Replace with actual package ID
+        '@local-pkg/gacha': 'YOUR_PACKAGE_ID', // Replace with actual package ID
       },
     },
   },

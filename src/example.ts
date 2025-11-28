@@ -4,7 +4,7 @@
  * This file demonstrates how to use the generated TypeScript bindings
  * to interact with your Move modules.
  * 
- * Note: After running `make codegen`, import from './generated/sui_gacha/sui_gacha'
+ * Note: After running `make codegen`, import from './generated/gacha/gacha'
  */
 
 import { Transaction } from '@mysten/sui/transactions';
@@ -12,7 +12,7 @@ import { SuiClient } from '@mysten/sui/client';
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 
 // Import generated code (uncomment after running codegen)
-// import * as sui_gacha from './generated/sui_gacha/sui_gacha';
+// import * as gacha from './generated/gacha/gacha';
 
 /**
  * Example: Configure SuiClient with package override
@@ -32,7 +32,7 @@ export function createSuiClient(network: 'devnet' | 'testnet' | 'mainnet' = 'tes
         mvr: {
             overrides: {
                 packages: {
-                    '@local-pkg/sui_gacha': 'YOUR_PACKAGE_ID', // Replace with actual package ID
+                    '@local-pkg/gacha': 'YOUR_PACKAGE_ID', // Replace with actual package ID
                 },
             },
         },
@@ -52,7 +52,7 @@ export async function exampleMoveCall(
   const tx = new Transaction();
   
   // Example: Call a function from your Move module
-  // tx.add(sui_gacha.someFunction({
+  // tx.add(gacha.someFunction({
   //   arguments: {
   //     // Type-safe arguments based on your Move function signature
   //   },

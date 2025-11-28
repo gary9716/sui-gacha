@@ -5,7 +5,7 @@ const config: SuiCodegenConfig = {
     prune: true,
     packages: [
         {
-            package: '@local-pkg/sui_gacha',
+            package: '@local-pkg/gacha',
             path: './',
         },
     ],

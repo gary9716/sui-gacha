@@ -138,19 +138,62 @@ Featured items receive a rate boost:
 
 #### Pity Mechanics
 
+**Important**: Pity counters are **player-specific** and **banner-specific**. Each player maintains their own independent pity state for each banner. This ensures fairness and prevents players from affecting each other's pity progress.
+
 **Soft Pity (Epic/5-star)**
 - Starts at pull 75
 - Base rate: 2.5%
 - Increases by 0.5% per pull after 75
 - Max rate: 50% at pull 89
+- Tracks per player, per banner
 
 **Hard Pity (Epic/5-star)**
 - Guaranteed at pull 90
-- Resets pity counter
+- Resets pity counter for that player on that banner
+- Each player's counter is independent
 
 **Pity (Legendary/6-star)**
 - Guaranteed at pull 300
 - Independent counter from Epic pity
+- Also tracked per player, per banner
+
+#### Pity Counter Visibility
+
+**Recommendation: Visible Pity Counters**
+
+For blockchain-based gacha systems, **transparent pity counters are strongly recommended** for the following reasons:
+
+**Advantages of Visible Pity:**
+1. **Trust & Transparency**: Aligns with blockchain principles of transparency and verifiability
+2. **Informed Decision-Making**: Players can plan their pulls and budget accordingly
+3. **Reduced Frustration**: Players know their progress toward guaranteed rewards
+4. **On-Chain Verifiability**: Since pity state is stored on-chain, it's publicly queryable anyway
+5. **Player Empowerment**: Allows players to make strategic choices about when to pull
+6. **Community Trust**: Public transparency builds long-term trust in the system
+
+**Implementation:**
+- Display current pity count in UI (e.g., "Epic Pity: 45/90")
+- Show progress bar or visual indicator
+- Display current effective rates (base + soft pity bonus)
+- Show pulls remaining until hard pity
+- Make pity state queryable via on-chain reads
+
+**Alternative: Hidden Pity (Traditional Approach)**
+
+Some traditional games hide pity counters to:
+- Create surprise and excitement when pity triggers
+- Prevent players from gaming the system
+- Maintain mystery around mechanics
+
+**However**, for blockchain systems:
+- On-chain data is publicly accessible, making true hiding difficult
+- Transparency is a key differentiator for blockchain games
+- Hidden mechanics can erode trust in decentralized systems
+
+**Hybrid Approach (Optional):**
+- Show pity count but not exact rates during soft pity
+- Display "Guaranteed in X pulls" for hard pity
+- Show progress but keep rate calculations partially obscured
 
 ### Randomness Generation
 
@@ -246,15 +289,17 @@ Player → Purchase/Quest → Currency Balance → Pull → Items
 
 ```
 1. Player selects banner
-2. Player chooses pull type (single/10-pull)
-3. System checks currency balance
-4. System deducts currency
-5. System generates random result
-6. System updates pity counters
-7. System awards items to inventory
-8. System displays pull animation
-9. Player views results
-10. System records transaction on-chain
+2. Player views current pity status before pull
+3. Player chooses pull type (single/10-pull)
+4. System checks currency balance
+5. System deducts currency
+6. System generates random result
+7. System updates pity counters
+8. System awards items to inventory
+9. System displays pull animation
+10. Player views results with updated pity counter
+11. System shows new pity status (e.g., "Epic Pity: 46/90")
+12. System records transaction on-chain
 ```
 
 ### Banner Selection Flow
@@ -266,7 +311,11 @@ Player → Purchase/Quest → Currency Balance → Pull → Items
    - Featured items
    - Rate information
    - Time remaining
-   - Pity counter status
+   - Current pity counters (visible):
+     * Epic pity: X/90 pulls
+     * Legendary pity: Y/300 pulls
+     * Current effective rates (with soft pity)
+     * Pulls until guaranteed
 4. Player selects banner
 5. Proceed to pull flow
 ```
@@ -311,12 +360,14 @@ struct PullResult has key {
 
 struct PlayerPityState has key {
     id: UID,
-    player: address,
-    banner_id: ID,
-    epic_pity: u64,
-    legendary_pity: u64,
+    player: address,        // Each player has their own pity state
+    banner_id: ID,          // Pity is tracked per banner
+    epic_pity: u64,         // Player-specific counter
+    legendary_pity: u64,    // Player-specific counter
     last_pull_time: u64,
 }
+// Note: Pity counters are NOT shared between players.
+// Each player maintains independent progress on each banner.
 ```
 
 ### Key Functions
@@ -382,6 +433,8 @@ fun select_item(
 - Immutable pity counters
 - On-chain storage of pity state
 - Prevent counter manipulation
+- Transparent visibility: Public access to pity state builds trust and allows verification
+- Verifiable calculations: Players can verify pity calculations match on-chain data
 
 ## Future Enhancements
 
