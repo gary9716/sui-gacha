@@ -28,7 +28,7 @@ A gacha system is a monetization mechanic commonly used in mobile and blockchain
 ### 1. Pull/Summon
 A single action where a player spends currency to receive one or more random items from a pool.
 
-### 2. Banner/Gacha Pool
+### 2. Banner
 A curated collection of items available for pulling during a specific time period or event. Each banner has:
 - Unique item pool
 - Probability rates for each rarity tier
