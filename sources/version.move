@@ -6,6 +6,7 @@ use sui::package::Publisher;
 
 const E_VERSION_NOT_OLDER: u64 = 0;
 const E_VERSION_INVALID: u64 = 1;
+const E_NOT_PUBLISHER: u64 = 2;
 
 //OTW
 public struct VERSION has drop {}
@@ -43,10 +44,12 @@ fun init(otw: VERSION, ctx: &mut sui::tx_context::TxContext) {
 /// Migrate version to new version number
 /// Requires publisher cap to ensure only package publisher can migrate
 entry fun migrate(
+    cap: &Publisher,
     version: &mut Version,
-    _cap: &Publisher,
     _ctx: &mut sui::tx_context::TxContext
 ) {
+    assert!(cap.from_module<VERSION>(), E_NOT_PUBLISHER);
+    
     // The presence of &Publisher ensures only the publisher can call this
     // Verify the version is being updated to the current package version
     assert!(version.version < CURRENT_VERSION, E_VERSION_NOT_OLDER);
