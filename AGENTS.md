@@ -207,6 +207,8 @@ A well-organized module makes it easier to understand the codebase, identify sec
 3. **Functions** (Last)
    - Organized by visibility level:
      - **Private functions** (`fun`) - Internal helpers, utilities
+       - **`init` function** (if exists) - Must be the first private function
+       - Other private helper functions follow after `init`
      - **Protected functions** (`public(package)`) - Package-level access
      - **Public functions** (`public` / `entry`) - Public API
 
@@ -247,6 +249,12 @@ const DEFAULT_RATE: u64 = 50;
 // ============================================================================
 // PRIVATE FUNCTIONS
 // ============================================================================
+
+/// Initialize module - only called automatically on package publish
+/// Must be the first private function if it exists
+fun init(otw: EXAMPLE, ctx: &mut sui::tx_context::TxContext) {
+    // Initialization logic
+}
 
 /// Internal helper function
 fun private_helper(x: u64): u64 {
@@ -315,6 +323,7 @@ entry fun execute(
 - [ ] Structs are defined first
 - [ ] Constants are defined second
 - [ ] Functions are organized by visibility (private → protected → public)
+- [ ] `init` function (if exists) is the first private function
 - [ ] Comment separators used to mark sections
 - [ ] Related items are grouped together
 - [ ] Public functions are clearly separated and documented
